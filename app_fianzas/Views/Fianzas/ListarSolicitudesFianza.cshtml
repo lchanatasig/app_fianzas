@@ -1,0 +1,172 @@
+﻿@model IEnumerable<app_fianzas.Models.SolicitudFianza>
+
+@{
+    ViewBag.Title = "Gestión de Solicitudes de Fianza";
+    ViewBag.pTitle = "Solicitudes de Fianza";
+    ViewBag.pageTitle = "Lista de Solicitudes";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var successMessage = TempData["SuccessMessage"] as string;
+    var errorMessage = TempData["ErrorMessage"] as string;
+}
+
+@section styles {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.dataTables.min.css">
+}
+
+<div class="col-xxl-12">
+
+    <div class="card mt-xxl-n5">
+
+        <div class="card shadow-sm">
+            <div class="card-header text-white">
+                <h2 class="mb-0">Solicitudes de Fianza</h2>
+            </div>
+            <div class="card-body p-4">
+                <table id="solicitudesTable" class="table table-striped dt-responsive nowrap" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Beneficiario</th>
+                            <th>Tipo de Fianza</th>
+                            <th>Monto</th>
+                            <th>Estado</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var solicitud in Model)
+                        {
+                            <tr>
+                                <td>@solicitud.SolicitudFianzaId</td>
+                                <td>@(solicitud.Beneficiario?.NombreBeneficiario ?? "No definido")</td>
+                                <td>@(solicitud.TipoFianza?.Nombre ?? "Sin datos")</td>
+                                <td>@String.Format("{0:C}", solicitud.MontoFianza)</td>
+                                <td>
+                                    @switch (solicitud.EstadoFianzaId)
+                                    {
+                                        case 1:
+                                            <span class="badge bg-warning">En espera de aprobación</span>
+                                            break;
+                                        case 2:
+                                            <span class="badge bg-info">Aprobada sin documentación</span>
+                                            break;
+                                        case 3:
+                                            <span class="badge bg-success">Aprobada y documentada</span>
+                                            break;
+                                        case 4:
+                                            <span class="badge bg-success">Liberada</span>
+                                            break;
+                                        case 5:
+                                            <span class="badge bg-success">Rechazada</span>
+                                            break;
+                                        default:
+                                            <span class="badge bg-secondary">Sin estado</span>
+                                            break;
+                                    }
+                                </td>
+                                <td>
+                                    @if (solicitud.EstadoFianzaId == 1)
+                                    {
+                                        <button class="btn btn-secondary btn-sm" disabled>Revisar</button>
+                                    }
+                                    else if (solicitud.EstadoFianzaId == 2)
+                                    {
+                                        <button class="btn btn-primary btn-sm"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#gestionDocumentosModal"
+                                                onclick="abrirModal(@solicitud.SolicitudFianzaId, @solicitud.TipoFianza?.TipoFianzaId, @solicitud.MontoFianza)">
+                                            Gestión Documentos
+                                        </button>
+                                    }
+                                    else if (solicitud.EstadoFianzaId == 3)
+                                    {
+                                        <a href="@Url.Action("DetalleSolicitudFianza", "SolicitudFianza", new { solicitudFianzaId = solicitud.SolicitudFianzaId })" class="btn btn-info btn-sm">
+                                            Revisar
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-secondary btn-sm" disabled>Sin Acción</button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+@section scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.2.2/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.print.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.html5.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            $('#solicitudesTable').DataTable({
+                responsive: true,
+                pageLength: 5,
+                lengthMenu: [5, 10, 20, 50],
+                language: {
+                    search: "Buscar:",
+                    lengthMenu: "Mostrar _MENU_ registros",
+                    info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
+                    paginate: {
+                        first: "Primero",
+                        last: "Último",
+                        next: "Siguiente",
+                        previous: "Anterior"
+                    }
+                }
+            });
+        });
+
+        function abrirModal(solicitudId, tipoFianzaId, montoFianza) {
+            document.getElementById("selectedSolicitudId").value = solicitudId;
+            document.getElementById("montoSolicitud").value = montoFianza;
+
+            let documentosLista = document.getElementById("documentosListaModal");
+            documentosLista.innerHTML = `
+                <li><a href="@Url.Action("DescargarPdf", "SolicitudFianza")?id=${solicitudId}" download>Descargar Documento</a></li>
+            `;
+
+            new bootstrap.Modal(document.getElementById("gestionDocumentosModal")).show();
+        }
+    </script>
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <script>
+            Swal.fire({
+                title: '¡Éxito!',
+                text: '@successMessage',
+                icon: 'success',
+                confirmButtonText: 'OK',
+                timer: 3000
+            });
+        </script>
+    }
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <script>
+            Swal.fire({
+                title: 'Error!',
+                text: '@errorMessage',
+                icon: 'error',
+                confirmButtonText: 'OK',
+                timer: 3000
+            });
+        </script>
+    }
+}

@@ -1,0 +1,179 @@
+﻿@model IEnumerable<app_fianzas.Models.SolicitudFianza>
+
+@{
+    ViewBag.Title = "Revisión de Solicitudes";
+    ViewBag.pTitle = "Fianzas";
+    ViewBag.pageTitle = "Aprobación";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section styles {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.dataTables.min.css">
+}
+
+@using Microsoft.AspNetCore.Http
+@{
+    var usuarioId = ViewContext.HttpContext.Session.GetInt32("UsuarioId");
+    var perfilId = ViewContext.HttpContext.Session.GetInt32("PerfilId");
+}
+
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-header text-white bg-primary">
+            <h2 class="mb-0">Revisión de Solicitudes</h2>
+        </div>
+        <div class="card-body">
+            <table id="revisionTable" class="table table-striped dt-responsive nowrap" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Empresa</th>
+                        <th>Tipo de Fianza</th>
+                        <th>Monto</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var solicitud in Model.Where(s => s.EstadoFianzaId == 1))
+                    {
+                        <tr>
+                            <td>@solicitud.SolicitudFianzaId</td>
+                            <td>@solicitud.Empresa.NombreEmpresa</td>
+                            <td>@solicitud.TipoFianza.Nombre</td>
+                            <td>@String.Format("{0:C}", solicitud.MontoFianza)</td>
+                            <td>
+                                <button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#revisionModal"
+                                        onclick="abrirRevision(@solicitud.SolicitudFianzaId, '@solicitud.Empresa.NombreEmpresa', '@solicitud.TipoFianza.Nombre', @solicitud.MontoFianza, @solicitud.TipoFianzaId)">
+                                    Revisar
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Revisión -->
+<div class="modal fade" id="revisionModal" tabindex="-1" aria-labelledby="revisionLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="revisionLabel">Revisión de Solicitud</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="solicitudIdRevision">
+                <p><strong>Solicitud N:</strong> <span id="solicitudIdLabel"></span></p>
+                <p><strong>Empresa:</strong> <span id="empresaRevision"></span></p>
+                <p><strong>Tipo de Fianza:</strong> <span id="tipoFianzaRevision"></span></p>
+                <p><strong>Monto:</strong> <span id="montoRevision"></span></p>
+                <h5>Documentos:</h5>
+                <ul id="documentosListaRevision"></ul>
+
+                <!-- Sección de Prenda (Solo si el monto es mayor a 416,000) -->
+                <div id="documentoPrendaContainer" class="mt-3 d-none">
+                    <h6>Documento Adicional:</h6>
+                    <ul>
+                        <li><a href="@Url.Action("DescargarPdf", "Fianza", new { documento = "prenda" })" download>Prenda (PDF)</a></li>
+                    </ul>
+                </div>
+
+                <hr>
+                <label for="observaciones" class="form-label">Observaciones:</label>
+                <textarea id="observaciones" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="modal-footer">
+                @if (perfilId == 3)
+                {
+                    <button type="button" class="btn btn-danger" onclick="procesarSolicitud(false)">Rechazar Técnico</button>
+                    <button type="button" class="btn btn-success" onclick="procesarSolicitud(true)">Aprobar Técnico</button>
+                }
+                else if (perfilId == 4)
+                {
+                    <button type="button" class="btn btn-danger" onclick="procesarSolicitud(false)">Rechazar Legal</button>
+                    <button type="button" class="btn btn-success" onclick="procesarSolicitud(true)">Aprobar Legal</button>
+                }
+                else if (perfilId == 1)
+                {
+                    <button type="button" class="btn btn-danger" onclick="procesarSolicitud(false)">Rechazar Solicitud</button>
+                    <button type="button" class="btn btn-success" onclick="procesarSolicitud(true)">Aprobar Solicitud</button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        function abrirRevision(solicitudId, empresa, tipoFianza, montoFianza, tipoFianzaId) {
+            document.getElementById("solicitudIdRevision").value = solicitudId;
+            document.getElementById("solicitudIdLabel").innerText = solicitudId;
+            document.getElementById("empresaRevision").innerText = empresa;
+            document.getElementById("tipoFianzaRevision").innerText = tipoFianza;
+            document.getElementById("montoRevision").innerText = "$" + parseFloat(montoFianza).toLocaleString('es-ES', { minimumFractionDigits: 2 });
+
+            let documentosLista = document.getElementById("documentosListaRevision");
+            let documentosHTML = `
+                <li><a href="#" download>Solicitud de Fianza</a></li>
+                <li><a href="#" download>Convenio de Fianza</a></li>
+                <li><a href="#" download>Pagaré</a></li>
+            `;
+
+            documentosLista.innerHTML = documentosHTML;
+
+            // Si el monto de la fianza es mayor a 416,000, mostrar el documento de prenda
+            if (parseFloat(montoFianza) > 416000) {
+                document.getElementById("documentoPrendaContainer").classList.remove("d-none");
+            } else {
+                document.getElementById("documentoPrendaContainer").classList.add("d-none");
+            }
+
+            new bootstrap.Modal(document.getElementById("revisionModal")).show();
+        }
+
+        function procesarSolicitud(esAprobacion) {
+            let solicitudId = document.getElementById("solicitudIdRevision").value;
+            let observaciones = document.getElementById("observaciones").value.trim();
+
+            if (observaciones === "") {
+                alert("Debe ingresar observaciones.");
+                return;
+            }
+
+            let form = document.createElement("form");
+            form.method = "post";
+            form.action = '@Url.Action("ProcesarSolicitud", "Revision")';
+
+            let inputSolicitud = document.createElement("input");
+            inputSolicitud.type = "hidden";
+            inputSolicitud.name = "SolicitudFianzaId";
+            inputSolicitud.value = solicitudId;
+            form.appendChild(inputSolicitud);
+
+            let inputUsuario = document.createElement("input");
+            inputUsuario.type = "hidden";
+            inputUsuario.name = "UsuarioId";
+            inputUsuario.value = @usuarioId;
+            form.appendChild(inputUsuario);
+
+            let inputObservaciones = document.createElement("input");
+            inputObservaciones.type = "hidden";
+            inputObservaciones.name = "Observaciones";
+            inputObservaciones.value = observaciones;
+            form.appendChild(inputObservaciones);
+
+            let inputEsAprobacion = document.createElement("input");
+            inputEsAprobacion.type = "hidden";
+            inputEsAprobacion.name = "esAprobacion";
+            inputEsAprobacion.value = esAprobacion;
+            form.appendChild(inputEsAprobacion);
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+    </script>
+}

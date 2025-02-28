@@ -1,0 +1,158 @@
+﻿@model EmpresaRegistroModel
+
+@{
+    ViewBag.Title = "Empresas";
+    ViewBag.pTitle = "Creacion Cupo y Empresa";
+    ViewBag.pageTitle = "Empresas";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var successMessage = TempData["SuccessMessage"] as string;
+    var errorMessage = TempData["ErrorMessage"] as string;
+}
+
+@section styles {
+    <!--datatable css-->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" />
+    <!--datatable responsive css-->
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.dataTables.min.css">
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Gestión de Empresas</h2>
+        <a href="@Url.Action("ListarEmpresas","Empresa")" type="button" class="btn btn-primary">
+            <span class="icon-on">Ver Empresas</span>
+        </a>
+    </div>
+
+    <!-- Contenedor de creación de empresa -->
+    <div id="empresaFormContainer">
+        <div class="card shadow-sm">
+            <div class="card-header  text-white">
+                <h2 class="mb-0">Creación y Calificación de Cupo</h2>
+            </div>
+            <div class="card-body">
+                <form id="cupoForm" asp-action="ActualizarE" asp-controller="Empresa" method="post" class="row g-3 needs-validation" novalidate>
+                    <input type="hidden" value="@Model.EmpresaId" name="empresaId" />
+                    <div class="row mt-3">
+                        <div class="col-lg-3">
+                            <div class="mb-6">
+                                <label>Seleccione el tipo de empresa</label>
+                                <select class="form-control" name="tipoEmpresaId" asp-for="TipoEmpresaId" data-choices data-choices-sorting-false required>
+                                    @foreach (var tipoEmpresa in ViewBag.TiposEmpresa)
+                                    {
+                                        <option value="@tipoEmpresa.TipoEmpresaId">@tipoEmpresa.NombreTipo</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <!-- Datos del Solicitante -->
+                        <div class="col-md-4">
+                            <label class="form-label">Nombre del Solicitante</label>
+                            <input type="text" class="form-control" name="nombreEmpresa" id="Nombre" value="@Model.NombreEmpresa" required>
+                            <div class="invalid-feedback">Ingrese un nombre válido.</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Dirección del Solicitante</label>
+                            <input type="text" class="form-control" name="direccionEmpresa" id="direccion" value="@Model.DireccionEmpresa" required>
+                            <div class="invalid-feedback">Ingrese un nombre válido.</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Identificación / RUC</label>
+                            <input type="text" class="form-control" name="ciEmpresa" id="Ci" value="@Model.CiEmpresa" required>
+                            <div class="invalid-feedback">Ingrese un RUC válido (13 dígitos).</div>
+                        </div>
+                        <!-- Información de Contacto -->
+                        <div class="col-md-4">
+                            <label class="form-label">Teléfono</label>
+                            <input type="text" class="form-control" name="telefonoEmpresa" id="Telefono" value="@Model.TelefonoEmpresa" required>
+                            <div class="invalid-feedback">Ingrese un teléfono válido.</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Correo Electrónico</label>
+                            <input type="email" class="form-control" name="emailEmpresa" id="Email" value="@Model.EmailEmpresa" required>
+                            <div class="invalid-feedback">Ingrese un correo válido.</div>
+                        </div>
+                        <!-- Activos -->
+                        <div class="col-md-2">
+                            <label class="form-label">Activo Corriente</label>
+                            <input type="number" class="form-control" name="activoCorriente" id="ActivoCorriente" asp-for="ActivoCorriente" required>
+                            <div class="invalid-feedback">Ingrese un valor válido.</div>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Activo Fijo</label>
+                            <input type="number" class="form-control" name="activoFijo" id="ActivoFijo" asp-for="ActivoFijo" required>
+                            <div class="invalid-feedback">Ingrese un valor válido.</div>
+                        </div>
+                        <!-- Patrimonio -->
+                        <div class="col-md-2">
+                            <label class="form-label">Capital</label>
+                            <input type="number" class="form-control input-numerico" name="capital" id="Capital" asp-for="Capital" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Reserva</label>
+                            <input type="number" class="form-control input-numerico" name="reserva" id="Reserva" asp-for="Reserva" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Pérdida</label>
+                            <input type="number" class="form-control input-numerico" name="perdida" id="Perdida" asp-for="Perdida" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Ventas</label>
+                            <input type="number" class="form-control input-numerico" name="ventas" id="Ventas" asp-for="Ventas" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Utilidad</label>
+                            <input type="number" class="form-control input-numerico" name="utilidad" id="Utilidad" asp-for="Utilidad" required>
+                        </div>
+                    </div>
+                    <!-- Cupo Asignado -->
+                    <div class="col-md-12">
+                        <label class="form-label">Cupo Asignado ($)</label>
+                        <input type="text" class="form-control" name="cupoAsignado" id="cupoAsignado" asp-for="CupoTotal" readonly>
+                        <input type="hidden" id="cupoAsignadoHidden" name="cupoTotal" asp-for="HistorialCupoRestante" />
+
+                    </div>
+                    <div class="col-12">
+                        <button class="btn btn-success w-100" type="submit">Guardar Empresa</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@section scripts {
+
+    <script src="~/assets/js/empresas.js"></script>
+
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <script>
+            Swal.fire({
+                title: '¡Success!',
+                text: '@successMessage',
+                icon: 'success',
+                confirmButtonText: 'OK'
+            });
+        </script>
+    }
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <script>
+            Swal.fire({
+                title: 'Error',
+                text: '@errorMessage',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        </script>
+    }
+
+
+}
+
+
