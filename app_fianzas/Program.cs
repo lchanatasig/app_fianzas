@@ -34,6 +34,7 @@ builder.Services.AddScoped<ListaService>();
 builder.Services.AddScoped<EmpresaService>();
 builder.Services.AddScoped<FianzasService>();
 builder.Services.AddScoped<RevisionService>();
+builder.Services.AddScoped<DocumentosService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
