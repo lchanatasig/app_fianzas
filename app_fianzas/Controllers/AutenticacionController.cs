@@ -15,7 +15,7 @@ namespace app_fianzas.Controllers
             _authenticacionService = usuarioService;
         }
 
-        [HttpGet("Inicio-Sesion")]
+        [HttpGet]
         public IActionResult Login()
         {
             return View();

@@ -191,8 +191,13 @@ namespace app_fianzas.Servicios
                                 MontoContrato = reader.GetDecimal(reader.GetOrdinal("monto_contrato")),
                                 MontoGarantia = reader.GetDecimal(reader.GetOrdinal("monto_garantia")),
                                 ObjetoContrato = reader.GetString(reader.GetOrdinal("objeto_contrato")),
-                                AprobacionTecnica = reader.GetBoolean(reader.GetOrdinal("aprobacion_tecnica")),
-                                AprobacionLegal = reader.GetBoolean(reader.GetOrdinal("aprobacion_legal")),
+                                AprobacionTecnica = reader.IsDBNull(reader.GetOrdinal("aprobacion_tecnica"))
+      ? (bool?)null
+      : reader.GetBoolean(reader.GetOrdinal("aprobacion_tecnica")),
+
+                                AprobacionLegal = reader.IsDBNull(reader.GetOrdinal("aprobacion_legal"))
+      ? (bool?)null
+      : reader.GetBoolean(reader.GetOrdinal("aprobacion_legal")),
                                 FechaCreacion = reader.GetDateTime(reader.GetOrdinal("fecha_creacion")),
                                 FechaActualizacion = reader.GetDateTime(reader.GetOrdinal("fecha_actualizacion")),
 

@@ -16,9 +16,7 @@
 }
 
 <div class="col-xxl-12">
-
     <div class="card mt-xxl-n5">
-
         <div class="card shadow-sm">
             <div class="card-header text-white">
                 <h2 class="mb-0">Solicitudes de Fianza</h2>
@@ -59,7 +57,7 @@
                                             <span class="badge bg-success">Liberada</span>
                                             break;
                                         case 5:
-                                            <span class="badge bg-success">Rechazada</span>
+                                            <span class="badge bg-danger">Rechazada</span>
                                             break;
                                         default:
                                             <span class="badge bg-secondary">Sin estado</span>
@@ -100,10 +98,57 @@
     </div>
 </div>
 
-
-
+<!-- Modal de Gestión de Documentos -->
+<div class="modal fade" id="gestionDocumentosModal" tabindex="-1" aria-labelledby="gestionDocumentosLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="gestionDocumentosLabel">Gestión de Documentos Firmados</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Sección de descargas -->
+                <div>
+                    <h6>Descargar Documentos:</h6>
+                    <ul id="documentosListaModal">
+                        <!-- Se completará dinámicamente en JS -->
+                    </ul>
+                </div>
+                <hr />
+                <!-- Formulario para subir documentos -->
+                <form id="uploadDocumentsForm" class="needs-validation" novalidate enctype="multipart/form-data">
+                    <input type="hidden" id="selectedSolicitudId">
+                    <input type="hidden" id="montoSolicitud">
+                    <div class="mb-3">
+                        <label for="solicitudFile" class="form-label">Solicitud de Fianza (PDF)</label>
+                        <input type="file" class="form-control" id="solicitudFile" accept=".pdf" required>
+                        <div class="invalid-feedback">Debe subir un archivo en formato PDF.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="convenioFile" class="form-label">Convenio de Fianza (PDF)</label>
+                        <input type="file" class="form-control" id="convenioFile" accept=".pdf" required>
+                        <div class="invalid-feedback">Debe subir un archivo en formato PDF.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="pagareFile" class="form-label">Pagaré (PDF)</label>
+                        <input type="file" class="form-control" id="pagareFile" accept=".pdf" required>
+                        <div class="invalid-feedback">Debe subir un archivo en formato PDF.</div>
+                    </div>
+                    <!-- Campo para documento adicional si el monto es mayor a 416,000 -->
+                    <div class="mb-3 d-none" id="extraDocumentoContainer">
+                        <label for="extraDocumentoFile" class="form-label" id="extraDocumentoLabel">Documento Adicional (PDF)</label>
+                        <input type="file" class="form-control" id="extraDocumentoFile" accept=".pdf">
+                        <div class="invalid-feedback">Debe subir un archivo en formato PDF.</div>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">Subir Documentos</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
 @section scripts {
+    <!-- jQuery, DataTables y otros scripts necesarios -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
@@ -133,16 +178,76 @@
         });
 
         function abrirModal(solicitudId, tipoFianzaId, montoFianza) {
+            // Asignar valores a los campos ocultos
             document.getElementById("selectedSolicitudId").value = solicitudId;
             document.getElementById("montoSolicitud").value = montoFianza;
 
             let documentosLista = document.getElementById("documentosListaModal");
-            documentosLista.innerHTML = `
-                <li><a href="@Url.Action("DescargarPdf", "SolicitudFianza")?id=${solicitudId}" download>Descargar Documento</a></li>
-            `;
 
+            // Generar dinámicamente los enlaces de descarga según el tipo de fianza
+            if (tipoFianzaId === 1) {
+                documentosLista.innerHTML = `
+                            <li><a href="@Url.Action("DescargarPdf", "SolicitudFianza")?id=${solicitudId}&tipo=fcc" download>Solicitud de Fianza (FCC PDF)</a></li>
+                            <li><a href="@Url.Action("DescargarPdf", "SolicitudFianza")?id=${solicitudId}&tipo=fcc&doc=convenio" download>Convenio de Fianza (FCC PDF)</a></li>
+                            <li><a href="@Url.Action("DescargarPdf", "SolicitudFianza")?id=${solicitudId}&tipo=fcc&doc=pagare" download>Pagaré (FCC PDF)</a></li>
+                        `;
+            } else if (tipoFianzaId === 2) {
+                documentosLista.innerHTML = `
+                            <li><a href="@Url.Action("DescargarPdf", "SolicitudFianza")?id=${solicitudId}&tipo=ga" download>Solicitud de Fianza (GA PDF)</a></li>
+                            <li><a href="@Url.Action("DescargarPdf", "SolicitudFianza")?id=${solicitudId}&tipo=ga&doc=convenio" download>Convenio de Fianza (GA PDF)</a></li>
+                            <li><a href="@Url.Action("DescargarPdf", "SolicitudFianza")?id=${solicitudId}&tipo=ga&doc=pagare" download>Pagaré (GA PDF)</a></li>
+                        `;
+            } else if (tipoFianzaId === 3) {
+                documentosLista.innerHTML = `
+                            <li><a href="@Url.Action("DescargarPdf", "SolicitudFianza")?id=${solicitudId}&tipo=bua" download>Solicitud de Fianza (BUA PDF)</a></li>
+                            <li><a href="@Url.Action("DescargarPdf", "SolicitudFianza")?id=${solicitudId}&tipo=bua&doc=convenio" download>Convenio de Fianza (BUA PDF)</a></li>
+                            <li><a href="@Url.Action("DescargarPdf", "SolicitudFianza")?id=${solicitudId}&tipo=bua&doc=pagare" download>Pagaré (BUA PDF)</a></li>
+                        `;
+            } else {
+                documentosLista.innerHTML = `
+                            <li><a href="#" download>Solicitud de Fianza (PDF)</a></li>
+                            <li><a href="#" download>Convenio de Fianza (PDF)</a></li>
+                            <li><a href="#" download>Pagaré (PDF)</a></li>
+                        `;
+            }
+
+            // Si el monto es mayor a 416,000 se muestra el enlace y campo para documento adicional
+            if (montoFianza > 416000) {
+                documentosLista.innerHTML += `<li><a href="@Url.Action("DescargarPdf", "SolicitudFianza", new { doc = "adicional" })?id=${solicitudId}" download>Documento Adicional (PDF)</a></li>`;
+                document.getElementById("extraDocumentoContainer").classList.remove("d-none");
+            } else {
+                document.getElementById("extraDocumentoContainer").classList.add("d-none");
+            }
+
+            // Mostrar el modal (opcional si ya se activa con data-bs-toggle)
             new bootstrap.Modal(document.getElementById("gestionDocumentosModal")).show();
         }
+
+        // Manejo del envío del formulario de documentos
+        document.getElementById("uploadDocumentsForm").addEventListener("submit", function (event) {
+            event.preventDefault();
+            if (!this.checkValidity()) {
+                this.classList.add("was-validated");
+                return;
+            }
+            let solicitudId = document.getElementById("selectedSolicitudId").value;
+            let montoSolicitud = parseFloat(document.getElementById("montoSolicitud").value) || 0;
+            let extraDocumentoFile = document.getElementById("extraDocumentoFile");
+
+            if (montoSolicitud > 416000 && extraDocumentoFile.files.length === 0) {
+                alert("Debe subir el documento adicional requerido.");
+                return;
+            }
+            // Aquí podrías realizar el envío vía AJAX o actualizar el estado en el servidor.
+            // Para este ejemplo, se simula con una alerta:
+            alert(`Documentos de la solicitud ${solicitudId} han sido gestionados correctamente.`);
+            bootstrap.Modal.getInstance(document.getElementById("gestionDocumentosModal")).hide();
+        });
+
+        $('#gestionDocumentosModal').on('hidden.bs.modal', function () {
+            $('.modal-backdrop').remove();
+        });
+
     </script>
 
     @if (!string.IsNullOrEmpty(successMessage))

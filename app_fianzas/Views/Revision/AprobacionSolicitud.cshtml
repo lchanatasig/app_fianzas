@@ -5,12 +5,13 @@
     ViewBag.pTitle = "Fianzas";
     ViewBag.pageTitle = "Aprobación";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var successMessage = TempData["SuccessMessage"] as string;
+    var errorMessage = TempData["ErrorMessage"] as string;
 }
 
 @section styles {
     <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.bootstrap.min.css" />
-    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.dataTables.min.css">
 }
 
 @using Microsoft.AspNetCore.Http
@@ -21,7 +22,7 @@
 
 <div class="container mt-4">
     <div class="card shadow-sm">
-        <div class="card-header text-white bg-primary">
+        <div class="card-header text-white ">
             <h2 class="mb-0">Revisión de Solicitudes</h2>
         </div>
         <div class="card-body">
@@ -71,10 +72,15 @@
                 <p><strong>Empresa:</strong> <span id="empresaRevision"></span></p>
                 <p><strong>Tipo de Fianza:</strong> <span id="tipoFianzaRevision"></span></p>
                 <p><strong>Monto:</strong> <span id="montoRevision"></span></p>
-                <h5>Documentos:</h5>
-                <ul id="documentosListaRevision"></ul>
 
-                <!-- Sección de Prenda (Solo si el monto es mayor a 416,000) -->
+                <h5>Documentos:</h5>
+                <ul id="documentosListaRevision">
+                    <li><a href="#" id="docSolicitud" download>Solicitud de Fianza</a></li>
+                    <li><a href="#" id="docConvenio" download>Convenio de Fianza</a></li>
+                    <li><a href="#" id="docPagare" download>Pagaré</a></li>
+                </ul>
+
+                <!-- Documento Adicional (Prenda) si el monto es mayor a 416,000 -->
                 <div id="documentoPrendaContainer" class="mt-3 d-none">
                     <h6>Documento Adicional:</h6>
                     <ul>
@@ -89,18 +95,20 @@
             <div class="modal-footer">
                 @if (perfilId == 3)
                 {
-                    <button type="button" class="btn btn-danger" onclick="procesarSolicitud(false)">Rechazar Técnico</button>
-                    <button type="button" class="btn btn-success" onclick="procesarSolicitud(true)">Aprobar Técnico</button>
+                    <button type="button" class="btn btn-danger" onclick="procesarSolicitud('@Url.Action("RechazarSolicitudTecnica", "Revision")')">Rechazar Técnico</button>
+                    <button type="button" class="btn btn-success" onclick="procesarSolicitud('@Url.Action("AprobarSolicitudTecnica", "Revision")')">Aprobar Técnico</button>
                 }
                 else if (perfilId == 4)
                 {
-                    <button type="button" class="btn btn-danger" onclick="procesarSolicitud(false)">Rechazar Legal</button>
-                    <button type="button" class="btn btn-success" onclick="procesarSolicitud(true)">Aprobar Legal</button>
+                    <button type="button" class="btn btn-danger" onclick="procesarSolicitud('@Url.Action("RechazarSolicitudLegal", "Revision")')">Rechazar Legal</button>
+                    <button type="button" class="btn btn-success" onclick="procesarSolicitud('@Url.Action("AprobarSolicitudLegal", "Revision")')">Aprobar Legal</button>
                 }
                 else if (perfilId == 1)
                 {
-                    <button type="button" class="btn btn-danger" onclick="procesarSolicitud(false)">Rechazar Solicitud</button>
-                    <button type="button" class="btn btn-success" onclick="procesarSolicitud(true)">Aprobar Solicitud</button>
+                    <button type="button" class="btn btn-danger" onclick="procesarSolicitud('@Url.Action("RechazarSolicitudTecnica", "Revision")')">Rechazar Técnico</button>
+                    <button type="button" class="btn btn-success" onclick="procesarSolicitud('@Url.Action("AprobarSolicitudTecnica", "Revision")')">Aprobar Técnico</button>
+                    <button type="button" class="btn btn-danger" onclick="procesarSolicitud('@Url.Action("RechazarSolicitudLegal", "Revision")')">Rechazar Legal</button>
+                    <button type="button" class="btn btn-success" onclick="procesarSolicitud('@Url.Action("AprobarSolicitudLegal", "Revision")')">Aprobar Legal</button>
                 }
             </div>
         </div>
@@ -116,16 +124,7 @@
             document.getElementById("tipoFianzaRevision").innerText = tipoFianza;
             document.getElementById("montoRevision").innerText = "$" + parseFloat(montoFianza).toLocaleString('es-ES', { minimumFractionDigits: 2 });
 
-            let documentosLista = document.getElementById("documentosListaRevision");
-            let documentosHTML = `
-                <li><a href="#" download>Solicitud de Fianza</a></li>
-                <li><a href="#" download>Convenio de Fianza</a></li>
-                <li><a href="#" download>Pagaré</a></li>
-            `;
-
-            documentosLista.innerHTML = documentosHTML;
-
-            // Si el monto de la fianza es mayor a 416,000, mostrar el documento de prenda
+            // Mostrar documento de prenda si el monto es mayor a 416,000
             if (parseFloat(montoFianza) > 416000) {
                 document.getElementById("documentoPrendaContainer").classList.remove("d-none");
             } else {
@@ -135,7 +134,7 @@
             new bootstrap.Modal(document.getElementById("revisionModal")).show();
         }
 
-        function procesarSolicitud(esAprobacion) {
+        function procesarSolicitud(url) {
             let solicitudId = document.getElementById("solicitudIdRevision").value;
             let observaciones = document.getElementById("observaciones").value.trim();
 
@@ -146,34 +145,45 @@
 
             let form = document.createElement("form");
             form.method = "post";
-            form.action = '@Url.Action("ProcesarSolicitud", "Revision")';
+            form.action = url;
 
-            let inputSolicitud = document.createElement("input");
-            inputSolicitud.type = "hidden";
-            inputSolicitud.name = "SolicitudFianzaId";
-            inputSolicitud.value = solicitudId;
-            form.appendChild(inputSolicitud);
-
-            let inputUsuario = document.createElement("input");
-            inputUsuario.type = "hidden";
-            inputUsuario.name = "UsuarioId";
-            inputUsuario.value = @usuarioId;
-            form.appendChild(inputUsuario);
-
-            let inputObservaciones = document.createElement("input");
-            inputObservaciones.type = "hidden";
-            inputObservaciones.name = "Observaciones";
-            inputObservaciones.value = observaciones;
-            form.appendChild(inputObservaciones);
-
-            let inputEsAprobacion = document.createElement("input");
-            inputEsAprobacion.type = "hidden";
-            inputEsAprobacion.name = "esAprobacion";
-            inputEsAprobacion.value = esAprobacion;
-            form.appendChild(inputEsAprobacion);
+            form.appendChild(new HiddenField("SolicitudFianzaId", solicitudId));
+            form.appendChild(new HiddenField("UsuarioId", @usuarioId));
+            form.appendChild(new HiddenField("Observaciones", observaciones));
 
             document.body.appendChild(form);
             form.submit();
         }
+
+        function HiddenField(name, value) {
+            let input = document.createElement("input");
+            input.type = "hidden";
+            input.name = name;
+            input.value = value;
+            return input;
+        }
     </script>
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <script>
+            Swal.fire({
+                title: '¡Exito!',
+                text: '@successMessage',
+                icon: 'success',
+                confirmButtonText: 'OK'
+            });
+        </script>
+    }
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <script>
+            Swal.fire({
+                title: 'Error!',
+                text: '@errorMessage',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        </script>
+    }
 }

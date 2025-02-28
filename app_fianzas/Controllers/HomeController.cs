@@ -15,7 +15,7 @@ public class HomeController : Controller
 
     public IActionResult Index()
     {
-        return Redirect("/Inicio-Sesion");
+        return RedirectToAction("Login", "Autenticacion");
     }
 
 
