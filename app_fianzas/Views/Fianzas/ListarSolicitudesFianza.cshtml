@@ -69,12 +69,12 @@
                                     }
                                 </td>
                                 <td>
-                                    @if (solicitud.EstadoFianzaId == 2)
+                                    @if (solicitud.EstadoFianzaId == 2 || solicitud.EstadoFianzaId == 3)
                                     {
                                         <button class="btn btn-primary btn-sm"
                                                 data-bs-toggle="modal"
                                                 data-bs-target="#gestionDocumentosModal"
-                                                onclick="abrirModal(@solicitud.SolicitudFianzaId, @solicitud.MontoFianza)">
+                                                onclick="abrirModal(@solicitud.SolicitudFianzaId, @solicitud.MontoFianza, @solicitud.EstadoFianzaId)">
                                             Gestión Documentos
                                         </button>
                                     }
@@ -105,10 +105,10 @@
                 <div>
                     <h6>Descargar Documentos:</h6>
                     <ul id="documentosListaModal">
-                        <li><a href="@Url.Action("DescargarPdf", "Documentacion", new { tipo = "solicitud" })" download>Solicitud de Fianza (PDF)</a></li>
-                        <li><a href="@Url.Action("DescargarPdf", "Documentacion", new { tipo = "convenio" })" download>Convenio de Fianza (PDF)</a></li>
-                        <li><a href="@Url.Action("DescargarPdf", "Documentacion", new { tipo = "pagare" })" download>Pagaré (PDF)</a></li>
-                        <li id="documentoAdicional" class="d-none"><a href="@Url.Action("DescargarPdf", "Documentacion", new { tipo = "prenda" })" download>Documento Adicional (Prenda PDF)</a></li>
+                        <li><a href="@Url.Action("DescargarPdf", "Documentos", new { tipo = "solicitud" })" download>Solicitud de Fianza (PDF)</a></li>
+                        <li><a href="@Url.Action("DescargarPdf", "Documentos", new { tipo = "convenio" })" download>Convenio de Fianza (PDF)</a></li>
+                        <li><a href="@Url.Action("DescargarPdf", "Documentos", new { tipo = "pagare" })" download>Pagaré (PDF)</a></li>
+                        <li id="documentoAdicional" class="d-none"><a href="@Url.Action("DescargarPdf", "Documentos", new { tipo = "prenda" })" download>Documento Adicional (Prenda PDF)</a></li>
                     </ul>
                 </div>
                 <hr />
@@ -116,7 +116,6 @@
                 <form id="uploadDocumentsForm" class="needs-validation" novalidate enctype="multipart/form-data">
                     <input type="hidden" id="selectedSolicitudId" name="SolicitudFianzaId">
                     <input type="hidden" name="UsuarioId" value="@usuarioId">
-
                     <input type="hidden" name="Poliza" value="1" />
                     <div class="mb-3">
                         <label for="solicitudFile" class="form-label">Solicitud de Fianza (PDF)</label>
@@ -143,9 +142,11 @@
 
 @section scripts {
     <script>
-        function abrirModal(solicitudId, montoFianza) {
+        function abrirModal(solicitudId, montoFianza, estado) {
+            // Asignar el ID de la solicitud al campo oculto
             document.getElementById("selectedSolicitudId").value = solicitudId;
 
+            // Mostrar u ocultar el documento adicional según el monto
             if (montoFianza > 416000) {
                 document.getElementById("extraDocumentoContainer").classList.remove("d-none");
                 document.getElementById("documentoAdicional").classList.remove("d-none");
@@ -154,6 +155,14 @@
                 document.getElementById("documentoAdicional").classList.add("d-none");
             }
 
+            // Si el estado es 3, ocultamos el formulario de subida y solo dejamos visibles las descargas
+            if (estado === 3) {
+                document.getElementById("uploadDocumentsForm").classList.add("d-none");
+            } else {
+                document.getElementById("uploadDocumentsForm").classList.remove("d-none");
+            }
+
+            // Mostrar el modal
             new bootstrap.Modal(document.getElementById("gestionDocumentosModal")).show();
         }
 
@@ -173,7 +182,7 @@
             formData.append("DocumentoConvenio", await fileToBase64(document.getElementById("convenioFile").files[0]));
             formData.append("DocumentoPagare", await fileToBase64(document.getElementById("pagareFile").files[0]));
 
-            // Si DocumentoPrenda existe
+            // Si DocumentoPrenda existe y se seleccionó un archivo, se añade al formulario
             if (document.getElementById("extraDocumentoFile").files.length > 0) {
                 formData.append("DocumentoPrenda", await fileToBase64(document.getElementById("extraDocumentoFile").files[0]));
             }
@@ -191,16 +200,14 @@
             }
         });
 
-        // Convertir archivo a base64
+        // Función para convertir archivo a base64
         async function fileToBase64(file) {
             return new Promise((resolve, reject) => {
                 let reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result.split(',')[1]); // Extraer la cadena base64
+                reader.onloadend = () => resolve(reader.result.split(',')[1]); // Extrae la cadena base64
                 reader.onerror = reject;
-                reader.readAsDataURL(file); // Convertir archivo a base64
+                reader.readAsDataURL(file);
             });
         }
-
-
     </script>
 }

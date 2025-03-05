@@ -37,62 +37,61 @@ namespace app_fianzas.Servicios
         /// <param name="cupoTotal"></param>
         /// <returns></returns>
         public async Task<(int? IdEmpresa, string Mensaje)> InsertarEmpresaAsync(
-           int tipoEmpresaId, string nombreEmpresa, string direccionEmpresa, string ciEmpresa,
-           string telefonoEmpresa, string emailEmpresa, decimal activoCorriente, decimal activoFijo,
-           decimal capital, decimal reserva, decimal perdida, decimal ventas, decimal utilidad, decimal cupoTotal)
+         int tipoEmpresaId, string nombreEmpresa, string direccionEmpresa, string ciEmpresa,
+         string telefonoEmpresa, string emailEmpresa, decimal activoCorriente, decimal activoFijo,
+         decimal capital, decimal reserva, decimal perdida, decimal ventas, decimal utilidad, decimal cupoTotal)
         {
             int? nuevoIdEmpresa = null;
-            string mensaje = "";
-
-            // Obtener la conexión desde el DbContext
-            var connection = _dbContext.Database.GetDbConnection();
+            string mensaje = string.Empty;
 
             try
             {
-                if (connection.State != ConnectionState.Open)
+                using (var connection = new SqlConnection(_dbContext.Database.GetConnectionString()))
+                {
                     await connection.OpenAsync();
 
-                using (var command = connection.CreateCommand())
-                {
-                    command.CommandText = "sp_insert_empresa";
-                    command.CommandType = CommandType.StoredProcedure;
-
-                    // Agregar parámetros de entrada
-                    command.Parameters.AddRange(new[]
+                    using (var command = connection.CreateCommand())
                     {
-                        new SqlParameter("@tipo_empresa_id", tipoEmpresaId) { DbType = DbType.Int32 },
-                        new SqlParameter("@nombre_empresa", nombreEmpresa) { DbType = DbType.String },
-                        new SqlParameter("@direccion_empresa", direccionEmpresa) { DbType = DbType.String },
-                        new SqlParameter("@ci_empresa", ciEmpresa) { DbType = DbType.String },
-                        new SqlParameter("@telefono_empresa", telefonoEmpresa) { DbType = DbType.String },
-                        new SqlParameter("@email_empresa", emailEmpresa) { DbType = DbType.String },
-                        new SqlParameter("@activo_corriente", activoCorriente) { DbType = DbType.Decimal },
-                        new SqlParameter("@activo_fijo", activoFijo) { DbType = DbType.Decimal },
-                        new SqlParameter("@capital", capital) { DbType = DbType.Decimal },
-                        new SqlParameter("@reserva", reserva) { DbType = DbType.Decimal },
-                        new SqlParameter("@perdida", perdida) { DbType = DbType.Decimal },
-                        new SqlParameter("@ventas", ventas) { DbType = DbType.Decimal },
-                        new SqlParameter("@utilidad", utilidad) { DbType = DbType.Decimal },
-                        new SqlParameter("@cupo_total", cupoTotal) { DbType = DbType.Decimal }
-                    });
+                        command.CommandText = "sp_insert_empresa";
+                        command.CommandType = CommandType.StoredProcedure;
 
-                    // Parámetro de salida para mensaje
-                    var mensajeParam = new SqlParameter("@p_mensaje", SqlDbType.NVarChar, 4000)
-                    {
-                        Direction = ParameterDirection.Output
-                    };
-                    command.Parameters.Add(mensajeParam);
-
-                    // Ejecutar el procedimiento almacenado
-                    using (var reader = await command.ExecuteReaderAsync())
-                    {
-                        if (await reader.ReadAsync() && !reader.IsDBNull(reader.GetOrdinal("nuevo_id_empresa")))
+                        // Agregar parámetros de entrada
+                        command.Parameters.AddRange(new[]
                         {
-                            nuevoIdEmpresa = reader.GetInt32(reader.GetOrdinal("nuevo_id_empresa"));
-                        }
-                    }
+                    new SqlParameter("@tipo_empresa_id", SqlDbType.Int) { Value = tipoEmpresaId },
+                    new SqlParameter("@nombre_empresa", SqlDbType.NVarChar, 100) { Value = nombreEmpresa },
+                    new SqlParameter("@direccion_empresa", SqlDbType.NVarChar, 200) { Value = direccionEmpresa },
+                    new SqlParameter("@ci_empresa", SqlDbType.NVarChar, 50) { Value = ciEmpresa },
+                    new SqlParameter("@telefono_empresa", SqlDbType.NVarChar, 50) { Value = telefonoEmpresa },
+                    new SqlParameter("@email_empresa", SqlDbType.NVarChar, 100) { Value = emailEmpresa },
+                    new SqlParameter("@activo_corriente", SqlDbType.Decimal) { Value = activoCorriente },
+                    new SqlParameter("@activo_fijo", SqlDbType.Decimal) { Value = activoFijo },
+                    new SqlParameter("@capital", SqlDbType.Decimal) { Value = capital },
+                    new SqlParameter("@reserva", SqlDbType.Decimal) { Value = reserva },
+                    new SqlParameter("@perdida", SqlDbType.Decimal) { Value = perdida },
+                    new SqlParameter("@ventas", SqlDbType.Decimal) { Value = ventas },
+                    new SqlParameter("@utilidad", SqlDbType.Decimal) { Value = utilidad },
+                    new SqlParameter("@cupo_total", SqlDbType.Decimal) { Value = cupoTotal }
+                });
 
-                    mensaje = mensajeParam.Value?.ToString() ?? "Error inesperado al insertar la empresa.";
+                        // Parámetro de salida para mensaje
+                        var mensajeParam = new SqlParameter("@p_mensaje", SqlDbType.NVarChar, 4000)
+                        {
+                            Direction = ParameterDirection.Output
+                        };
+                        command.Parameters.Add(mensajeParam);
+
+                        // Ejecutar el procedimiento almacenado y leer el resultado
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            if (await reader.ReadAsync() && !reader.IsDBNull(reader.GetOrdinal("nuevo_id_empresa")))
+                            {
+                                nuevoIdEmpresa = reader.GetInt32(reader.GetOrdinal("nuevo_id_empresa"));
+                            }
+                        }
+
+                        mensaje = mensajeParam.Value?.ToString() ?? "Error inesperado al insertar la empresa.";
+                    }
                 }
             }
             catch (Exception ex)

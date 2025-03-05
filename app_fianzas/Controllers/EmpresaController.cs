@@ -57,7 +57,7 @@ namespace app_fianzas.Controllers
         /// </summary>
         /// <param name="empresaModel"></param>
         /// <returns></returns>
-        [HttpPost("Registrar-Empresa")]
+        [HttpPost]
         public async Task<IActionResult> RegistrarE(EmpresaRegistroModel empresaModel)
         {
             if (empresaModel == null)

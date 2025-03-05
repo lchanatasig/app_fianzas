@@ -74,17 +74,16 @@
                 <p><strong>Monto:</strong> <span id="montoRevision"></span></p>
 
                 <h5>Documentos:</h5>
-                <ul id="documentosListaRevision">
-                    <li><a href="#" id="docSolicitud" download>Solicitud de Fianza</a></li>
-                    <li><a href="#" id="docConvenio" download>Convenio de Fianza</a></li>
-                    <li><a href="#" id="docPagare" download>Pagaré</a></li>
-                </ul>
-
+               <ul id="documentosListaModal">
+    <li><a href="@Url.Action("DescargarPdf", "Documentos", new { tipo = "solicitud" })" download>Solicitud de Fianza (PDF)</a></li>
+    <li><a href="@Url.Action("DescargarPdf", "Documentos", new { tipo = "convenio" })" download>Convenio de Fianza (PDF)</a></li>
+    <li><a href="@Url.Action("DescargarPdf", "Documentos", new { tipo = "pagare" })" download>Pagaré (PDF)</a></li>
+</ul>
                 <!-- Documento Adicional (Prenda) si el monto es mayor a 416,000 -->
                 <div id="documentoPrendaContainer" class="mt-3 d-none">
                     <h6>Documento Adicional:</h6>
                     <ul>
-                        <li><a href="@Url.Action("DescargarPdf", "Fianza", new { documento = "prenda" })" download>Prenda (PDF)</a></li>
+    <li id="documentoAdicional" class="d-none"><a href="@Url.Action("DescargarPdf", "Documentos", new { tipo = "prenda" })" download>Documento Adicional (Prenda PDF)</a></li>
                     </ul>
                 </div>
 

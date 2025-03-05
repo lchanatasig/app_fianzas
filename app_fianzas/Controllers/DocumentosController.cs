@@ -1,6 +1,8 @@
 ﻿using app_fianzas.Models;
 using app_fianzas.Servicios;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using System.IO;
 
 namespace app_fianzas.Controllers
 {
@@ -8,11 +10,13 @@ namespace app_fianzas.Controllers
     {
         private readonly DocumentosService _documentacionService;
         private readonly ILogger _logger;
-        public DocumentosController(DocumentosService documentosService, ILogger<DocumentosService> logger)
+        private readonly IWebHostEnvironment _env;
+
+        public DocumentosController(DocumentosService documentosService, ILogger<DocumentosService> logger, IWebHostEnvironment env)
         {
             _documentacionService = documentosService;
             _logger = logger;
-
+            _env = env;
         }
 
         [HttpPost("Insertar-Documentacion-Aprobar")]
@@ -20,41 +24,32 @@ namespace app_fianzas.Controllers
         {
             if (!ModelState.IsValid)
             {
-                // Obtener los detalles de los errores del modelo
                 var errorMessages = ModelState.Values.SelectMany(v => v.Errors)
                                                        .Select(e => e.ErrorMessage)
                                                        .ToList();
 
-                // Registrar los errores en la consola o en el log
                 foreach (var error in errorMessages)
                 {
-                    Console.WriteLine(error);  // O usa tu mecanismo de logging
+                    Console.WriteLine(error);
                 }
 
-                // Mostrar los errores de validación en TempData
                 TempData["ErrorMessage"] = "Datos de documentación no válidos. " +
-                                            "Por favor revise los siguientes errores: " + string.Join(", ", errorMessages);
-
-                // Redirigir al usuario con el mensaje de error
+                                           "Por favor revise los siguientes errores: " + string.Join(", ", errorMessages);
                 return RedirectToAction("AprobacionSolicitud", "Revision");
             }
 
-
             try
             {
-                // Verificar si los archivos llegaron correctamente
                 if (request.DocumentoSolicitud == null || request.DocumentoConvenio == null || request.DocumentoPagare == null)
                 {
                     TempData["ErrorMessage"] = "Faltan archivos requeridos.";
                     return RedirectToAction("AprobacionSolicitud", "Revision");
                 }
 
-                // Agregar un log para verificar los valores de los archivos
                 Console.WriteLine($"DocumentoSolicitud: {request.DocumentoSolicitud.Length} bytes");
                 Console.WriteLine($"DocumentoConvenio: {request.DocumentoConvenio.Length} bytes");
                 Console.WriteLine($"DocumentoPagare: {request.DocumentoPagare.Length} bytes");
 
-                // Llamar al servicio para procesar los archivos
                 var mensaje = await _documentacionService.InsertarDocumentacionYAprobarAsync(request);
 
                 if (mensaje.Contains("correctamente"))
@@ -74,6 +69,38 @@ namespace app_fianzas.Controllers
             return RedirectToAction("AprobacionSolicitud", "Revision");
         }
 
+        [HttpGet("DescargarPdf")]
+        public IActionResult DescargarPdf(string tipo)
+        {
+            string fileName;
+            switch (tipo)
+            {
+                case "solicitud":
+                    fileName = "solicitud.pdf";
+                    break;
+                case "convenio":
+                    fileName = "convenio.pdf";
+                    break;
+                case "pagare":
+                    fileName = "pagare.pdf";
+                    break;
+                case "prenda":
+                    fileName = "prenda.pdf";
+                    break;
+                default:
+                    return NotFound();
+            }
 
+            // _env.WebRootPath apunta a "C:\Users\SAFERISK\source\repos\app_fianzas\app_fianzas\wwwroot"
+            var filePath = Path.Combine(_env.WebRootPath, "plantillas", fileName);
+
+            if (!System.IO.File.Exists(filePath))
+            {
+                return NotFound();
+            }
+
+            byte[] fileBytes = System.IO.File.ReadAllBytes(filePath);
+            return File(fileBytes, "application/pdf", fileName);
+        }
     }
 }

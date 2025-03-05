@@ -18285,7 +18285,6 @@ span.flatpickr-weekday {
     z-index: 0;
     border-radius: .25rem
 }
-
 @media (max-width:576.98px) {
     .about-img-section::before {
         right: 20px;
@@ -18322,13 +18321,4 @@ span.flatpickr-weekday {
         text-transform: uppercase;
     }
 
-#login-foto {
-    background: url('/assets/images/insurance.jpg');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    height: 70%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
+
