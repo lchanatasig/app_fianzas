@@ -285,6 +285,12 @@
                         <input class="form-check-input docSecundario" type="radio" name="prenda" id="prendaHipotecaria" value="Prenda Hipotecaria">
                         <label class="form-check-label" for="prendaHipotecaria">Prenda Hipotecaria</label>
                     </div>
+
+                    <div class="form-check me-3">
+                        <input class="form-check-input docSecundario" type="radio" name="prenda" id="prendaCartaAval" value="Prenda Carta Aval">
+                        <label class="form-check-label" for="prendaCartaAval">Prenda Carta Aval</label>
+                    </div>
+
                     <div class="invalid-feedback d-block" id="documentosSecundariosFeedback" style="display: none;">
                         Seleccione un documento adicional.
                     </div>
@@ -358,8 +364,21 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Formulario adicional para carta aval -->
+                    <div id="formPrendaCartaAval" class="d-none">
+                        <hr>
+                        <h4>Datos para Carta Aval</h4>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="observacionesPH2" class="form-label">Subir Archivo</label>
+                                <input type="file" class="form-control" id="observacionesPH2" name="prendaArchivo">
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
-                <i class=""></i>
+                
 
                 <!-- Botón para guardar solicitud -->
                 <div class="col-12">

@@ -6,6 +6,7 @@
         document.getElementById("formPrendaComercial").classList.add("d-none");
         document.getElementById("formPrendaIndustrial").classList.add("d-none");
         document.getElementById("formPrendaHipotecaria").classList.add("d-none");
+        document.getElementById("formPrendaCartaAval").classList.add("d-none");
 
         // Verificar cuál radio está seleccionado
         const prendaSeleccionada = document.querySelector('input[name="prenda"]:checked');
@@ -20,6 +21,9 @@
                     break;
                 case "Prenda Hipotecaria":
                     document.getElementById("formPrendaHipotecaria").classList.remove("d-none");
+                    break;
+                case "Prenda Carta Aval":
+                    document.getElementById("formPrendaCartaAval").classList.remove("d-none");
                     break;
                 default:
                     break;
